@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
         ).required()
 
         override fun execute() {
-
+            Convert(inputFile, inputFileFormat, outputFile)
         }
     }
 
@@ -28,11 +28,11 @@ fun main(args: Array<String>) {
         ).required()
 
         override fun execute() {
-
+            Convert(inputString, inputStringFormat, output = null)
         }
     }
 
-    // parse arguments and options
+    // Parse arguments and options
     val file = File()
     val single = Single()
     parser.subcommands(file, single)
