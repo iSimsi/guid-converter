@@ -7,7 +7,10 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
 
     init {
         if (output == null) {
-             singleConversion(input)
+            singleConversion(input)
+        }
+        else {
+            fileConversion(input, output!!)
         }
     }
 
@@ -72,6 +75,49 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
             println(hexOutput)
             withLoggingContext("user" to "singleConversion") {
                 logger.info { "Conversion of guid value $input to hex value $hexOutput was successful" }
+            }
+            exitProcess(0)
+        }
+    }
+
+    private fun fileConversion(input: String, output: String) {
+        val filesystem = Filesystem()
+
+        filesystem.checkInputFile(input)
+        filesystem.checkOutputPath(output)
+
+        if (calcOutputFormat() == "guid") {
+            val valuesHex = filesystem.readFile(input)
+            for (valueHex in valuesHex) {
+                if (!validateHex(valueHex)) {
+                    withLoggingContext("user" to "fileConversion") {
+                        logger.error { "Validation of hex value $valueHex failed" }
+                    }
+                    exitProcess(1)
+                } else {
+                    val valueGuid = hexToGuid(valueHex)
+                    filesystem.writeFile(output, valueGuid)
+                    withLoggingContext("user" to "fileConversion") {
+                        logger.info { "Conversion of hex value $input to guid value $valueGuid was successful" }
+                    }
+                }
+            }
+            exitProcess(0)
+        } else {
+            val valuesGuid = filesystem.readFile(input)
+            for (valueGuid in valuesGuid) {
+                if (!validateHex(valueGuid)) {
+                    withLoggingContext("user" to "fileConversion") {
+                        logger.error { "Validation of hex value $valueGuid failed" }
+                    }
+                    exitProcess(1)
+                } else {
+                    val valueHex = guidToHex(valueGuid)
+                    filesystem.writeFile(output, valueHex)
+                    withLoggingContext("user" to "fileConversion") {
+                        logger.info { "Conversion of hex value $input to guid value $valueHex was successful" }
+                    }
+                }
             }
             exitProcess(0)
         }
