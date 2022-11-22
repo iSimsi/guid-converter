@@ -1,16 +1,14 @@
 import mu.KotlinLogging
 import mu.withLoggingContext
-import java.io.File
+import java.io.*
 import kotlin.system.exitProcess
 import org.apache.commons.io.FilenameUtils
-import java.io.IOException
 
 class Filesystem {
     private val logger = KotlinLogging.logger {}
 
     fun checkInputFile(inputFile: String) {
         val file = File(inputFile).exists()
-
         if (!file) {
             withLoggingContext("user" to "checkInputFile") {
                 logger.error { "File $inputFile not found" }
@@ -18,7 +16,7 @@ class Filesystem {
             exitProcess(1)
         } else {
             withLoggingContext("user" to "checkInputFile") {
-                logger.error { "File $inputFile found" }
+                logger.info { "File $inputFile found" }
             }
         }
     }
@@ -34,7 +32,7 @@ class Filesystem {
             exitProcess(1)
         } else {
             withLoggingContext("user" to "checkOutputPath") {
-                logger.error { "Path $outputPath found" }
+                logger.info { "Path $outputPath found" }
             }
         }
     }
@@ -50,16 +48,20 @@ class Filesystem {
         }
     }
 
-
-    fun writeFile(outputFile: String, value: String) {
+    fun writeFile(outputFile: String, outputList: List<String>) {
         try {
-            File(outputFile).bufferedWriter().use { out -> out.write(value) }
+            val fileWriter = FileWriter(outputFile)
+            val bufferedWriter = BufferedWriter(fileWriter)
+            for (value in outputList) {
+                bufferedWriter.write(value)
+                bufferedWriter.newLine()
+            }
+            bufferedWriter.close()
         } catch (exception: IOException) {
             withLoggingContext("user" to "writeFile") {
                 logger.error { "$exception" }
             }
             exitProcess(1)
-
         }
     }
 
