@@ -1,7 +1,6 @@
 import mu.KotlinLogging
 import mu.withLoggingContext
 import java.io.*
-import kotlin.system.exitProcess
 import org.apache.commons.io.FilenameUtils
 
 class Filesystem {
@@ -13,7 +12,7 @@ class Filesystem {
             withLoggingContext("user" to "checkInputFile") {
                 logger.error { "File $inputFile not found" }
             }
-            exitProcess(1)
+            throw Exception("File $inputFile not found")
         } else {
             withLoggingContext("user" to "checkInputFile") {
                 logger.info { "File $inputFile found" }
@@ -29,7 +28,7 @@ class Filesystem {
             withLoggingContext("user" to "checkOutputPath") {
                 logger.error { "Path $outputPath not found" }
             }
-            exitProcess(1)
+
         } else {
             withLoggingContext("user" to "checkOutputPath") {
                 logger.info { "Path $outputPath found" }
@@ -44,7 +43,7 @@ class Filesystem {
             withLoggingContext("user" to "readFile") {
                 logger.error { "$exception" }
             }
-            exitProcess(1)
+            throw exception
         }
     }
 
@@ -61,7 +60,7 @@ class Filesystem {
             withLoggingContext("user" to "writeFile") {
                 logger.error { "$exception" }
             }
-            exitProcess(1)
+            throw exception
         }
     }
 
