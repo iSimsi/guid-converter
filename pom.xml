@@ -89,22 +89,12 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.isimsi.MainKt</mainClass>
+                            <mainClass>com.isimsi.guid-converter.MainKt</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                    <configuration>
-                        <archive>
-                            <manifest>
-                                <mainClass>com.isimsi.MainKt</mainClass>
-                            </manifest>
-                        </archive>
                 </configuration>
             </plugin>
         </plugins>
