@@ -97,6 +97,16 @@
                     </descriptorRefs>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <mainClass>com.isimsi.MainKt</mainClass>
+                            </manifest>
+                        </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
