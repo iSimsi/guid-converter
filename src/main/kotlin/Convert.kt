@@ -1,6 +1,5 @@
 import mu.KotlinLogging
 import mu.withLoggingContext
-//import kotlin.system.exitProcess
 
 class Convert (input: String, private var inputFormat: String, var output: String?) {
     private val logger = KotlinLogging.logger {}
