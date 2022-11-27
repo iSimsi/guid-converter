@@ -89,7 +89,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.isimsi.guid-converter.MainKt</mainClass>
+                            <mainClass>MainKt</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -153,5 +153,4 @@
         </dependency>
 
     </dependencies>
-
 </project>
