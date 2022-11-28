@@ -28,7 +28,7 @@ class Filesystem {
             withLoggingContext("user" to "checkOutputPath") {
                 logger.error { "Path $outputPath not found" }
             }
-
+            throw Exception("Path $outputFile not found")
         } else {
             withLoggingContext("user" to "checkOutputPath") {
                 logger.info { "Path $outputPath found" }

@@ -48,7 +48,7 @@ internal class ConvertTest {
 
     @Test
     fun testValidateHex2() {
-        val result = testConvert.validateGuid("48518F6E40850164809B4EAEC8")
+        val result = testConvert.validateGuid("48518F6E40850164809BEAEC8")
         assertFalse(result)
     }
 

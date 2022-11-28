@@ -12,7 +12,7 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
         }
     }
 
-    internal fun calcOutputFormat(): String {
+    private fun calcOutputFormat(): String {
         val format = when (inputFormat) {
             "hex" -> "guid"
             "guid" -> "hex"

@@ -7,8 +7,8 @@ fun main(args: Array<String>) {
 
     // File conversion (Arguments and options for cli parsing)
     class File: Subcommand("file", "Convert the content of input file to output file") {
-        val inputFile: String by argument(ArgType.String, description = "Full path to input file")
-        val outputFile: String by argument(ArgType.String, description = "Full path to output file")
+        val inputFile: String by argument(ArgType.String, description = "Full path to the input file")
+        val outputFile: String by argument(ArgType.String, description = "Full path with name of the output file")
         val inputFileFormat: String by option(ArgType.Choice(listOf("guid", "hex"), { it }),
             shortName = "i", description = "Format of the values in the input file"
         ).required()
