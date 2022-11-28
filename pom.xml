@@ -6,7 +6,7 @@
 
     <artifactId>guid-converter</artifactId>
     <groupId>com.isimsi</groupId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>guidConverter</name>
