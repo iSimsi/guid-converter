@@ -7,13 +7,12 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
     init {
         if (output == null) {
             singleConversion(input)
-        }
-        else {
+        } else {
             fileConversion(input, output!!)
         }
     }
 
-    private fun calcOutputFormat(): String {
+    internal fun calcOutputFormat(): String {
         val format = when (inputFormat) {
             "hex" -> "guid"
             "guid" -> "hex"
@@ -27,21 +26,21 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
         return format
     }
 
-    fun validateGuid(guid: String): Boolean {
+    internal fun validateGuid(guid: String): Boolean {
         return guid.length == 38 && guid.startsWith("{") && guid.endsWith("}")
     }
 
-    fun validateHex(hex: String): Boolean {
+    internal fun validateHex(hex: String): Boolean {
         return hex.length == 32
     }
 
-    fun guidToHex(guid: String): String {
+    internal fun guidToHex(guid: String): String {
         return (guid.substring(7, 9) + guid.substring(5, 7) + guid.substring(3, 5) + guid.substring(1, 3)
                 + guid.substring(12, 14) + guid.substring(10, 12) + guid.substring(17, 19) + guid.substring(15, 17)
                 + guid.substring(20, 24) + guid.substring(25, 37))
     }
 
-    fun hexToGuid(hex: String): String {
+    internal fun hexToGuid(hex: String): String {
         return ("{" + hex.substring(6, 8) + hex.substring(4, 6) + hex.substring(2, 4) + hex.substring(0, 2) + "-"
                 + hex.substring(10, 12) + hex.substring(8, 10) + "-" + hex.substring(14, 16) + hex.substring(12, 14)
                 + "-" + hex.substring(16, 20) + "-" + hex.substring(20, 32) + "}")
