@@ -1,7 +1,18 @@
-@file:OptIn(ExperimentalCli::class)
-
 import kotlinx.cli.*
 
+/**
+ * Main class of the app.
+ *
+ * Parses the arguments passed from CLI and executes a file conversion or single conversion
+ * from hex to guid, or from guid to hex.
+ *
+ * @param args the arguments passed from cli
+ * @author <a href="https://github.com/iSimsi/">iSimsi</a>
+ * @since 1.0.0
+ * @see <a href="https://github.com/Kotlin/kotlinx-cli">https://github.com/Kotlin/kotlinx-cli</a>
+ */
+
+@OptIn(ExperimentalCli::class)
 fun main(args: Array<String>) {
     val parser = ArgParser("guid-converter")
 
