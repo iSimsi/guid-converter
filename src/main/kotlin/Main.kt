@@ -12,9 +12,12 @@ fun main(args: Array<String>) {
         val inputFileFormat: String by option(ArgType.Choice(listOf("guid", "hex"), { it }),
             shortName = "i", description = "Format of the values in the input file"
         ).required()
+        val threadCount: Int by option(ArgType.Int, shortName = "t",
+            description = "Count of Threads for file conversion"
+        ).default(1)
 
         override fun execute() {
-            Convert(inputFile, inputFileFormat, outputFile)
+            Convert(inputFile, inputFileFormat, outputFile, threadCount)
         }
     }
 
@@ -28,7 +31,7 @@ fun main(args: Array<String>) {
         ).required()
 
         override fun execute() {
-            Convert(inputString, inputStringFormat, output = null)
+            Convert(inputString, inputStringFormat, output = null, threads = 1)
         }
     }
 

@@ -1,8 +1,14 @@
 import mu.KotlinLogging
 import mu.withLoggingContext
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
+import kotlin.system.measureTimeMillis
 
-class Convert (input: String, private var inputFormat: String, var output: String?) {
+class Convert (input: String, private var inputFormat: String, var output: String?, threads: Int) {
     private val logger = KotlinLogging.logger {}
+    private val conversionExecutors = Executors.newFixedThreadPool(threads).asCoroutineDispatcher()
 
     init {
         if (output == null) {
@@ -44,6 +50,56 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
         return ("{" + hex.substring(6, 8) + hex.substring(4, 6) + hex.substring(2, 4) + hex.substring(0, 2) + "-"
                 + hex.substring(10, 12) + hex.substring(8, 10) + "-" + hex.substring(14, 16) + hex.substring(12, 14)
                 + "-" + hex.substring(16, 20) + "-" + hex.substring(20, 32) + "}")
+    }
+
+    private fun executeHexConversion(valuesHex: List<String>) = runBlocking {
+        val filesystem = Filesystem()
+        val outputListGuid = mutableListOf<String>()
+
+        for (valueHex in valuesHex) {
+            launch(conversionExecutors) {
+                runBlocking {
+                    if (!validateHex(valueHex)) { // check format of hex value
+                        withLoggingContext("user" to "executeHexConversion") {
+                            logger.error { "Validation of hex value $valueHex failed" }
+                        }
+                        throw Exception("Validation of hex value $valueHex failed")
+                    } else {
+                        val valueGuid = hexToGuid(valueHex) // Convert
+                        outputListGuid.add(valueGuid)
+                        filesystem.writeFile(output!!, outputListGuid) // Write list of values to file
+                        withLoggingContext("user" to "executeHexConversion") {
+                            logger.debug { "Conversion of hex value $valueHex to guid value $valueGuid was successful" }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun executeGuidConversion(valuesGuid: List<String>) = runBlocking {
+        val filesystem = Filesystem()
+        val outputListHex= mutableListOf<String>()
+
+        for (valueGuid in valuesGuid) {
+            launch(conversionExecutors) {
+                runBlocking {
+                    if (!validateGuid(valueGuid)) { // check format of guid value
+                        withLoggingContext("user" to "executeGuidConversion") {
+                            logger.error { "Validation of hex value $valueGuid failed" }
+                        }
+                        throw Exception("Validation of hex value $valueGuid failed")
+                    } else {
+                        val valueHex = guidToHex(valueGuid) // Convert
+                        outputListHex.add(valueHex)
+                        filesystem.writeFile(output!!, outputListHex) // Write list of values to file
+                        withLoggingContext("user" to "executeGuidConversion") {
+                            logger.debug { "Conversion of guid value $valueGuid to hex value $valueHex was successful" }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun singleConversion(input: String) {
@@ -90,11 +146,8 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
         }
     }
 
-    private fun fileConversion(input: String, output: String) {
+    private fun fileConversion(input: String, output: String) = runBlocking {
         val filesystem = Filesystem()
-        val outputListHex = mutableListOf<String>()
-        val outputListGuid = mutableListOf<String>()
-        val runtimeStart = System.currentTimeMillis()
 
         // Check input file and output path
         filesystem.checkInputFile(input)
@@ -112,32 +165,22 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
             // Read input file
             val valuesHex = filesystem.readFile(input)
 
-            for (valueHex in valuesHex) {
-                if (!validateHex(valueHex)) { // check format of hex value
-                    withLoggingContext("user" to "fileConversion") {
-                        logger.error { "Validation of hex value $valueHex failed" }
-                    }
-                    throw Exception("Validation of hex value $valueHex failed")
-                } else {
-                    val valueGuid = hexToGuid(valueHex) // Convert
-                    outputListGuid.add(valueGuid)
-                    filesystem.writeFile(output, outputListGuid) // Write list of values to file
-                    withLoggingContext("user" to "fileConversion") {
-                        logger.debug { "Conversion of hex value $valueHex to guid value $valueGuid was successful" }
-                    }
-                }
+            // Execute the conversion
+            val runTimeInMillis = measureTimeMillis {
+                executeHexConversion(valuesHex)
             }
 
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Finished conversion process" }
             }
 
-            val runtimeEnd = System.currentTimeMillis()
-            val runtime = (runtimeEnd - runtimeStart) / 1000
+            val runTime = runTimeInMillis / 1000
 
             withLoggingContext("user" to "fileConversion") {
-                logger.info { "Runtime: $runtime seconds" }
+                logger.info { "Runtime: $runTime seconds" }
             }
+
+            conversionExecutors.close()
         } else {
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Output format is hex" }
@@ -146,32 +189,22 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
             // Read input file
             val valuesGuid = filesystem.readFile(input)
 
-            for (valueGuid in valuesGuid) {
-                if (!validateGuid(valueGuid)) { // check format of guid value
-                    withLoggingContext("user" to "fileConversion") {
-                        logger.error { "Validation of hex value $valueGuid failed" }
-                    }
-                    throw Exception("Validation of hex value $valueGuid failed")
-                } else {
-                    val valueHex = guidToHex(valueGuid) // Convert
-                    outputListHex.add(valueHex)
-                    filesystem.writeFile(output, outputListHex) // Write list of values to file
-                    withLoggingContext("user" to "fileConversion") {
-                        logger.debug { "Conversion of guid value $valueGuid to hex value $valueHex was successful" }
-                    }
-                }
+            // Execute the conversion
+            val runTimeInMillis = measureTimeMillis {
+                executeGuidConversion(valuesGuid)
             }
 
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Finished conversion process" }
             }
 
-            val runtimeEnd = System.currentTimeMillis()
-            val runtime = (runtimeEnd - runtimeStart) / 1000
+            val runTime = runTimeInMillis / 1000
 
             withLoggingContext("user" to "fileConversion") {
-                logger.info { "Runtime: $runtime seconds" }
+                logger.info { "Runtime: $runTime seconds" }
             }
+
+            conversionExecutors.close()
         }
     }
 }

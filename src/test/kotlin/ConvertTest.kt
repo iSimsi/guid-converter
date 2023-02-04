@@ -2,7 +2,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 
 internal class ConvertTest {
-    private val testConvert: Convert = Convert("{48ED4993-8F51-406E-8501-64809B4EAEC8}","guid" ,null)
+    private val testConvert: Convert = Convert("{48ED4993-8F51-406E-8501-64809B4EAEC8}","guid" ,null, 1)
 
     @Test
     fun testHexToGuid() {
