@@ -4,8 +4,9 @@
 name: Guid Converter Release
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - master
 
 jobs:
   build:
