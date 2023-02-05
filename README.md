@@ -39,6 +39,7 @@ Arguments:
     outputFile -> Full path to output file { String }
 Options:
     --inputFileFormat, -i -> Format of the values in the input file (always required) { Value should be one of [guid, hex] }
+    --threadCount, -t [1] -> Count of Threads for file conversion { Int }
     --help, -h -> Usage info
 
 ```
@@ -49,6 +50,6 @@ Options:
 <dependency>
     <groupId>com.isimsi</groupId>
     <artifactId>guid-converter</artifactId>
-    <version>1.0.0</version>
+    <version>1.2.1</version>
 </dependency> 
 ```
