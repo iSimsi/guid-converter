@@ -1,9 +1,7 @@
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import mu.withLoggingContext
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.Executors
+import kotlinx.coroutines.channels.*
 import kotlin.system.measureTimeMillis
 
 /**
@@ -17,9 +15,10 @@ import kotlin.system.measureTimeMillis
  * @author <a href="https://github.com/iSimsi/">iSimsi</a>
  * @since 1.0.0
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class Convert (input: String, private var inputFormat: String, var output: String?, threads: Int) {
     private val logger = KotlinLogging.logger {}
-    private val conversionExecutors = Executors.newFixedThreadPool(threads).asCoroutineDispatcher()
+    private val conversionExecutors = Dispatchers.IO.limitedParallelism(threads)
 
     /**
      * The constructor
@@ -105,11 +104,13 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
      * Executes multithreaded conversions for file hex conversion
      *
      * @param valuesHex the hex values as a list of strings
-     * @throws Exception if value validation failed
+     * @return the guid values as a list of strings
+     * @throws Exception if input hex value validation failed
+     * @throws Exception if output guid value validation failed
      * @since 1.1.0
      */
-    private fun executeHexConversion(valuesHex: List<String>) = runBlocking {
-        val filesystem = Filesystem()
+    private suspend fun executeHexConversion(valuesHex: List<String>): List<String> = withContext(conversionExecutors){
+        val conversionChannel = Channel<String>()
         val outputListGuid = mutableListOf<String>()
 
         for (valueHex in valuesHex) {
@@ -117,52 +118,70 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
                 runBlocking {
                     if (!validateHex(valueHex)) { // check format of hex value
                         withLoggingContext("user" to "executeHexConversion") {
-                            logger.error { "Validation of hex value $valueHex failed" }
+                            logger.error { "Validation of input hex value $valueHex failed" }
                         }
-                        throw Exception("Validation of hex value $valueHex failed")
+                        throw Exception("Validation of input hex value $valueHex failed")
                     } else {
                         val valueGuid = hexToGuid(valueHex) // Convert
-                        outputListGuid.add(valueGuid)
-                        filesystem.writeFile(output!!, outputListGuid) // Write list of values to file
-                        withLoggingContext("user" to "executeHexConversion") {
-                            logger.debug { "Conversion of hex value $valueHex to guid value $valueGuid was successful" }
+                        if (!validateGuid(valueGuid)) { // check format of guid value
+                            withLoggingContext("user" to "executeHexConversion") {
+                                logger.error { "Validation of output guid value $valueGuid failed" }
+                            }
+                            throw Exception("Validation of output guid value $valueGuid failed")
+                        } else {
+                            conversionChannel.send(valueGuid)
+                            withLoggingContext("user" to "executeHexConversion") {
+                                logger.debug { "Conversion of hex value $valueHex to guid value $valueGuid was successful" }
+                            }
                         }
                     }
                 }
             }
+            outputListGuid.add(conversionChannel.receive())
         }
+        return@withContext outputListGuid
     }
 
     /**
      * Executes multithreaded conversions for file guid conversion
      *
-     * @param valuesGuid the hex values as a list of strings
-     * @throws Exception if value validation failed
+     * @param valuesGuid the guid values as a list of strings
+     * @return the hex values as a list of strings
+     * @throws Exception if input guid value validation failed
+     * @throws Exception if value output hex validation failed
      * @since 1.1.0
      */
-    private fun executeGuidConversion(valuesGuid: List<String>) = runBlocking {
-        val filesystem = Filesystem()
-        val outputListHex= mutableListOf<String>()
+    private suspend fun executeGuidConversion(valuesGuid: List<String>) = withContext(conversionExecutors) {
+        val conversionChannel = Channel<String>()
+        val outputListHex = mutableListOf<String>()
 
         for (valueGuid in valuesGuid) {
             launch(conversionExecutors) {
                 runBlocking {
                     if (!validateGuid(valueGuid)) { // check format of guid value
                         withLoggingContext("user" to "executeGuidConversion") {
-                            logger.error { "Validation of hex value $valueGuid failed" }
+                            logger.error("Validation of input guid value $valueGuid failed")
                         }
-                        throw Exception("Validation of hex value $valueGuid failed")
+                        throw Exception("Validation of input guid value $valueGuid failed")
                     } else {
                         val valueHex = guidToHex(valueGuid) // Convert
-                        outputListHex.add(valueHex)
-                        filesystem.writeFile(output!!, outputListHex) // Write list of values to file
-                        withLoggingContext("user" to "executeGuidConversion") {
-                            logger.debug { "Conversion of guid value $valueGuid to hex value $valueHex was successful" }
+                        if (!validateHex(valueHex)) { // check format of hex value
+                            withLoggingContext("user" to "executeGuidConversion") {
+                                logger.error("Validation of output hex value $valueHex failed")
+                            }
+                            throw Exception("Validation of output hex value $valueHex failed")
+                        } else {
+                            conversionChannel.send(valueHex)
+                            withLoggingContext("user" to "executeGuidConversion") {
+                                logger.debug("Conversion of guid value $valueGuid to hex value $valueHex was successful")
+                            }
                         }
                     }
                 }
             }
+            outputListHex.add(conversionChannel.receive())
         }
+        return@withContext outputListHex
     }
 
     /**
@@ -241,23 +260,27 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
 
             // Read input file
             val valuesHex = filesystem.readFile(input)
+            val countHex = valuesHex.count()
+            withLoggingContext("user" to "fileConversion") {
+                logger.info { "Found $countHex guids in input file $input" }
+            }
 
             // Execute the conversion
             val runTimeInMillis = measureTimeMillis {
-                executeHexConversion(valuesHex)
+                val outputListGuid = executeHexConversion(valuesHex)
+                filesystem.writeFile(output, outputListGuid, countHex) // Write list of values to file
             }
+
+            coroutineContext.cancelChildren()
 
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Finished conversion process" }
             }
 
-            val runTime = runTimeInMillis / 1000
-
             withLoggingContext("user" to "fileConversion") {
-                logger.info { "Runtime: $runTime seconds" }
+                logger.info { "Runtime: $runTimeInMillis milliseconds" }
             }
 
-            conversionExecutors.close()
         } else {
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Output format is hex" }
@@ -265,23 +288,26 @@ class Convert (input: String, private var inputFormat: String, var output: Strin
 
             // Read input file
             val valuesGuid = filesystem.readFile(input)
+            val countGuids = valuesGuid.count()
+            withLoggingContext("user" to "fileConversion") {
+                logger.info { "Found $countGuids guids in input file $input" }
+            }
 
             // Execute the conversion
             val runTimeInMillis = measureTimeMillis {
-                executeGuidConversion(valuesGuid)
+                val outputListHex = executeGuidConversion(valuesGuid)
+                filesystem.writeFile(output, outputListHex, countGuids) // Write list of values to file
             }
+
+            coroutineContext.cancelChildren()
 
             withLoggingContext("user" to "fileConversion") {
                 logger.info { "Finished conversion process" }
             }
 
-            val runTime = runTimeInMillis / 1000
-
             withLoggingContext("user" to "fileConversion") {
-                logger.info { "Runtime: $runTime seconds" }
+                logger.info { "Runtime: $runTimeInMillis milliseconds" }
             }
-
-            conversionExecutors.close()
         }
     }
 }

@@ -59,7 +59,7 @@ class Filesystem {
     /**
      * Reads the content of the input file
      *
-     * @param inputFile the path to the input file as String
+     * @param inputFile the path to the input file as string
      * @throws IOException if the input file is not found
      * @since 1.0.0
      */
@@ -77,25 +77,45 @@ class Filesystem {
     /**
      * Writes the content to the output file
      *
-     * @param outputFile the path to the output file as String
-     * @throws IOException if the folder is not found
+     * @param outputFile the path to the output file as string
+     * @param outputList the values to write as a list of strings
+     * @param count the expected number of values to write as integer
+     * @throws IOException if an I/O error occurs
      * @since 1.0.0
      */
-    fun writeFile(outputFile: String, outputList: List<String>) {
+    fun writeFile(outputFile: String, outputList: List<String>, count: Int) {
         try {
             val fileWriter = FileWriter(outputFile)
             val bufferedWriter = BufferedWriter(fileWriter)
+
+            var writeCounter = 0
+
+            val countOutputList = outputList.count()
+            withLoggingContext("user" to "writeFile") {
+                logger.info("Received $countOutputList values to write to the file $outputFile")
+            }
+
             for (value in outputList) {
                 bufferedWriter.write(value)
                 bufferedWriter.newLine()
+                writeCounter += 1
             }
             bufferedWriter.close()
+
+            if (writeCounter == count) {
+                withLoggingContext("user" to "writeFile") {
+                    logger.info("$writeCounter values were successfully written to the file $outputFile")
+                }
+            } else {
+                withLoggingContext("user" to "writeFile") {
+                    logger.warn("Number of values written to file $writeCounter are not equal to the expected number of $count")
+                }
+            }
         } catch (exception: IOException) {
             withLoggingContext("user" to "writeFile") {
-                logger.error { "$exception" }
+                logger.error("$exception")
             }
             throw exception
         }
     }
-
 }
